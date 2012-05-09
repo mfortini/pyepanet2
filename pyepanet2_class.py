@@ -1,3 +1,4 @@
+import logging
 import pyepanet2 as PE
 
 def attrproperty(getter_function):
@@ -15,7 +16,7 @@ class pyepanet2(object):
                 self._binaryFile = binaryFile
                 rc = PE.ENopen(self._inputFile, self._reportFile, self._binaryFile)
                 if (rc):
-                        print "ENOpen returned %d" % (rc)
+                        logging.warning("ENOpen returned %d" % (rc))
 
                 (status, self._nodeCount) = PE.ENgetcount(PE.EN_NODECOUNT)
                 (status, self._tankCount) = PE.ENgetcount(PE.EN_TANKCOUNT)
@@ -30,7 +31,7 @@ class pyepanet2(object):
                         
                 self._nodePressure = {}
 
-                print "Opened %s with %d nodes %d tanks %d links" % (self._inputFile, self._nodeCount, self._tankCount, self._linkCount)
+                logging.debug("Opened %s with %d nodes %d tanks %d links" % (self._inputFile, self._nodeCount, self._tankCount, self._linkCount))
 
         def __del__(self):
                 PE.ENclose()
@@ -39,14 +40,76 @@ class pyepanet2(object):
                 return self._nodeCount
         nodeCount = property(getNodeCount)
 
+        def getLinkCount(self):
+                return self._linkCount
+        linkCount = property(getLinkCount)
+
         def getTankCount(self):
                 return self._tankCount
         tankCount = property(getTankCount)
+
+        @attrproperty
+        def linkNodes(self, i):
+                (a,u,v) = PE.ENgetlinknodes(i)
+                return (u,v)
+
+        @attrproperty
+        def linkIsPipe(self,i):
+                (a,v) = PE.ENgetlinktype(i)
+                return v == PE.EN_PIPE
+
+        @attrproperty
+        def linkDiameter(self,i):
+                (a,d) = PE.ENgetlinkvalue(i, PE.EN_DIAMETER)
+                return d
+
+        @attrproperty
+        def linkType(self,i):
+                (a,v) = PE.ENgetlinktype(i)
+                return v
+
+        @attrproperty
+        def linkLength(self,i):
+                (a,v) = PE.ENgetlinkvalue(i, PE.EN_LENGTH)
+                return v
+
+        @attrproperty
+        def linkRoughness(self,i):
+                (a,v) = PE.ENgetlinkvalue(i, PE.EN_ROUGHNESS)
+                return v
+
+        @attrproperty
+        def linkInitStatus(self,i):
+                (a,v) = PE.ENgetlinkvalue(i, PE.EN_INITSTATUS)
+                return v
+
+        @attrproperty
+        def nodeBaseDemand(self,i):
+                (a,d) = PE.ENgetnodevalue(i, PE.EN_BASEDEMAND)
+                return d
+
+        @attrproperty
+        def nodeElev(self,i):
+                (a,v) = PE.ENgetnodevalue(i, PE.EN_ELEVATION)
+                return v
+
+        @attrproperty
+        def nodePattern(self,i):
+                (a,v) = PE.ENgetnodevalue(i, PE.EN_PATTERN)
+                return v
+
+        @attrproperty
+        def nodeType(self,i):
+                (a,v) = PE.ENgetnodetype(i)
+                return v
 
         def applyDiam(self, diameters):
                 for (idx,diam) in zip (range(1,len(diameters) + 1),diameters):
                         #print "setting pipe %d to diam %f" % (idx, diam.diam)
                         PE.ENsetlinkvalue(idx, PE.EN_DIAMETER, diam)
+
+        def openH(self):
+                PE.ENopenH()
 
         def solveH(self):
                 self._nodePressure = {}
@@ -61,16 +124,25 @@ class pyepanet2(object):
                 except KeyError:
                         (status, self._nodePressure[index]) = PE.ENgetnodevalue(index, PE.EN_PRESSURE)
                         if status != 0:
-                                print "Warning ENgetnodevalue returned %d" % (status, )
+                                logging.warning("Warning ENgetnodevalue returned %d" % (status, ))
                 return self._nodePressure[index]
 
         def getNodeIds(self):
                 return self._nodeId
         nodeIds = property(getNodeIds)
 
+        @attrproperty
+        def nodeId(self, index):
+                return self.nodeIds[index]
+
         def getLinkIds(self):
                 return self._linkId
         linkIds = property(getLinkIds)
+
+        @attrproperty
+        def linkId(self, index):
+                return self.linkIds[index]
+
 
         def getNodePressures(self):
                 ret = {}
