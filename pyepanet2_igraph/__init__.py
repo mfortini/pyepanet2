@@ -1,0 +1,1 @@
+from pyepanet2_igraph import pyepanet2
