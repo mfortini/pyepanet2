@@ -9,6 +9,8 @@ def attrproperty(getter_function):
             return getter_function(self.obj, attr)
     return property(_Object)
 
+NODE_TYPES={0:"junction",1:"reservoir",2:"tank"}
+
 class pyepanet2(object):
         def __init__ (self, inputFile, reportFile, binaryFile):
                 self._inputFile = inputFile
@@ -25,9 +27,20 @@ class pyepanet2(object):
                 for i in range (1, self._nodeCount+1):
                         (status, self._nodeId[i]) = PE.ENgetnodeid(i)
 
+                self._nodeType = {}
+                for i in range (1, self._nodeCount+1):
+                        (status, self._nodeId[i]) = PE.ENgetnodeid(i)
+                        (status, nodeType) = PE.ENgetnodetype(i)
+                        self._nodeType[i] = NODE_TYPES[nodeType]
+
                 self._linkId = {}
+                self._linkNodes = {}
+                self._linkLength = {}
                 for i in range (1, self._linkCount+1):
                         (status, self._linkId[i]) = PE.ENgetlinkid(i)
+                        (status, u,v) = PE.ENgetlinknodes(i)
+                        self._linkNodes[i] = (u,v)
+                        (status, self._linkLength[i]) = PE.ENgetlinkvalue(i,PE.EN_LENGTH);
                         
                 self._nodePressure = {}
 
@@ -79,6 +92,11 @@ class pyepanet2(object):
                 return v
 
         @attrproperty
+        def linkFlow(self,i):
+                (a,v) = PE.ENgetlinkvalue(i, PE.EN_FLOW)
+                return v
+
+        @attrproperty
         def linkInitStatus(self,i):
                 (a,v) = PE.ENgetlinkvalue(i, PE.EN_INITSTATUS)
                 return v
@@ -96,6 +114,11 @@ class pyepanet2(object):
         @attrproperty
         def nodePattern(self,i):
                 (a,v) = PE.ENgetnodevalue(i, PE.EN_PATTERN)
+                return v
+
+        @attrproperty
+        def nodeHead(self,i):
+                (a,v) = PE.ENgetnodevalue(i, PE.EN_HEAD)
                 return v
 
         @attrproperty
@@ -131,6 +154,10 @@ class pyepanet2(object):
                 return self._nodeId
         nodeIds = property(getNodeIds)
 
+        def getNodeTypes(self):
+                return self._nodeType
+        nodeTypes = property(getNodeTypes)
+
         @attrproperty
         def nodeId(self, index):
                 return self.nodeIds[index]
@@ -156,4 +183,11 @@ class pyepanet2(object):
                 return ret
         nodePressuresVector = property(getNodePressuresVector)
 
+        def getLinkNodes(self):
+                return self._linkNodes
+        linkNodes = property(getLinkNodes)
+
+        def getLinkLengths(self):
+                return self._linkLength
+        linkLengths = property(getLinkLengths)
 
