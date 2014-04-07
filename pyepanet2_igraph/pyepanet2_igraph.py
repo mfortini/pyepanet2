@@ -1,5 +1,5 @@
 import igraph as G
-from pyepanet2.epanet2 import pyepanet2 as PE
+from epanet2.pyepanet2 import pyepanet2 as PE
 
 
 class pyepanet2(PE):
