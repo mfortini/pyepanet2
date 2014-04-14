@@ -9,7 +9,23 @@ def attrproperty(getter_function):
             return getter_function(self.obj, attr)
     return property(_Object)
 
-NODE_TYPES={0:"junction",1:"reservoir",2:"tank"}
+NODE_TYPES={
+        0:"junction",
+        1:"reservoir",
+        2:"tank"
+            }
+
+LINK_TYPES={
+        0:"cvipe",
+        1:"pipe",
+        2:"pump",
+        3:"prv",
+        4:"psv",
+        5:"pbv",
+        6:"fcv",
+        7:"tcv",
+        8:"gpv"
+            }
 
 class pyepanet2(object):
         def __init__ (self, inputFile, reportFile, binaryFile):
@@ -36,11 +52,14 @@ class pyepanet2(object):
                 self._linkId = {}
                 self._linkNodes = {}
                 self._linkLength = {}
+                self._linkType = {}
                 for i in range (1, self._linkCount+1):
                         (status, self._linkId[i]) = PE.ENgetlinkid(i)
                         (status, u,v) = PE.ENgetlinknodes(i)
                         self._linkNodes[i] = (u,v)
                         (status, self._linkLength[i]) = PE.ENgetlinkvalue(i,PE.EN_LENGTH);
+                        (status, linkType) = PE.ENgetlinktype(i)
+                        self._linkType[i] = LINK_TYPES[linkType]
                         
                 self._nodePressure = {}
 
@@ -191,3 +210,6 @@ class pyepanet2(object):
                 return self._linkLength
         linkLengths = property(getLinkLengths)
 
+        def getLinkTypes(self):
+                return self._linkType
+        linkTypes = property(getLinkTypes)
