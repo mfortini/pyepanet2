@@ -2,6 +2,10 @@ import igraph as G
 #import epanet2.pyepanet2 as PE
 import pyepanet2 as PE
 import re
+from math import sqrt
+
+def _nodedist(u,v):
+    return sqrt((u['x']-v['x'])**2+(u['y']-v['y'])**2)
 
 
 def _getCoordinates(g,epa):
@@ -51,6 +55,30 @@ def _getVertices(g,epa):
         g.es.find(name=s_eid)['path'] = vertices
 
 
+# expands the graph by splitting each multilinestring into its components
+def expandGraph(g):
+    for e in g.es:
+        if e['path']:
+            if len(e['path'])>2:
+                edgevertices=[]
+                edgevertices.append(g.vs[e.source]['name'])
+                for i in range(1,len(e['path'])-1):
+                    vertexname="e"+str(e['name'])+"_"+str(i)
+                    (x,y) = e['path'][i]
+                    g.add_vertex(name=vertexname,x=x,y=y)
+                    edgevertices.append(vertexname)
+                edgevertices.append(g.vs[e.target]['name'])
+
+
+                for i in range(len(e['path']) - 1):
+                    u=g.vs.find(edgevertices[i])
+                    v=g.vs.find(edgevertices[i+1])
+                    g.add_edge(u,v,length=_nodedist(u,v),name=str(e['name']+"_"+str(i)),roughness=e['roughness'],type=e['type'])
+
+                g.delete_edges((e,))
+
+    return g
+
 
 def getGraph(epa):
         edges = epa.linkNodes
@@ -66,7 +94,7 @@ def getGraph(epa):
         g.vs['elev']=[epa.nodeElev[int(n)] for n in g.vs['index']]
         g.vs['head']=[epa.nodeHead[int(n)] for n in g.vs['index']]
         for (eid,(u,v)) in edges.iteritems():
-                g.add_edge(g.vs.find('index'==u),g.vs.find('index'==v),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid])
+                g.add_edge(g.vs.find(index=str(u)),g.vs.find(index=str(v)),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid])
         g.es['type']=[epa.linkTypes[int(n)] for n in g.es['index']]
         g.es['name']=[epa.linkIds[int(n)] for n in g.es['index']]
 
