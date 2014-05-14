@@ -57,28 +57,71 @@ def _getVertices(g,epa):
 
 # expands the graph by splitting each multilinestring into its components
 def expandGraph(g):
+    edges_to_del = []
     for e in g.es:
         if e['path']:
             if len(e['path'])>2:
+                u=g.vs[e.source]
+                v=g.vs[e.target]
+
+                (x,y) = e['path'][0]
+                pathstart = {'x':x,'y':y}
+                (x,y) = e['path'][-1]
+                pathend = {'x':x,'y':y}
+
+                if (_nodedist(u,pathend) < _nodedist(u,pathstart)):
+                    e['path'].reverse()
+
                 edgevertices=[]
-                edgevertices.append(g.vs[e.source]['name'])
+                edgevertices.append(u['name'])
+
+                (x,y) = e['path'][0]
+                if x != u['x'] or y != u['y']:
+                    vertexname="e"+str(e['name'])+"_"+str(0)
+                    g.add_vertex(name=vertexname,x=x,y=y)
+                    edgevertices.append(vertexname)
+
                 for i in range(1,len(e['path'])-1):
                     vertexname="e"+str(e['name'])+"_"+str(i)
                     (x,y) = e['path'][i]
                     g.add_vertex(name=vertexname,x=x,y=y)
                     edgevertices.append(vertexname)
-                edgevertices.append(g.vs[e.target]['name'])
+
+                (x,y) = e['path'][-1]
+                if x != v['x'] or y != v['y']:
+                    vertexname="e"+str(e['name'])+"_"+str(len(e['path']))
+                    g.add_vertex(name=vertexname,x=x,y=y)
+                    edgevertices.append(vertexname)
+
+                edgevertices.append(v['name'])
 
 
-                for i in range(len(e['path']) - 1):
+                for i in range(len(edgevertices) - 1):
                     u=g.vs.find(edgevertices[i])
                     v=g.vs.find(edgevertices[i+1])
-                    g.add_edge(u,v,length=_nodedist(u,v),name=str(e['name']+"_"+str(i)),roughness=e['roughness'],type=e['type'])
+                    g.add_edge(u,v,length=_nodedist(u,v),name=str(e['name']+"_"+str(i)),roughness=e['roughness'],type=e['type'],pipe_name=e['name'])
 
-                g.delete_edges((e,))
+                edges_to_del.append(e)
 
+    g.delete_edges(edges_to_del)
     return g
 
+def printINP(g):
+    print '[JUNCTIONS]'
+    for v in g.vs(type='junction'):
+        print '%-16s\t%-16s\t%-16s\t;' % (v['name'],v['elev'],v['baseDemand'])
+
+    print '[RESERVOIRS]'
+    for v in g.vs(type='reservoir'):
+        print '%-16s\t%-16s\t;' % (v['name'],v['head'])
+
+    print '[TANKS]'
+    for v in g.vs(type='tank'):
+        print '%-16s\t%-16s\t;' % (v['name'],v['elev'])
+
+    print '[PIPES]'
+    for e in g.es:
+        print '%-16s\t%-16s\t%-16s\t%-16s\t%-16s\t%-16s\t%-16s\t%-16s\t;' % (e['name'],g.vs[e.source]['name'],g.vs[e.target]['name'],e['length'],e['DN'],e['roughness'],0,e['status'])
 
 def getGraph(epa):
         edges = epa.linkNodes
