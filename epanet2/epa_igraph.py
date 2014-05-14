@@ -84,7 +84,8 @@ def getGraph(epa):
         edges = epa.linkNodes
         edgeLengths = epa.linkLengths
         edgeRoughness = epa.linkRoughness
-        g = G.Graph(directed=True)
+        edgeDiameter = epa.linkDiameter
+        g = G.Graph(directed=False)
         g.add_vertices(len(epa.nodeIds))
         g.vs['name']=map(str,epa.nodeIds.values())
         g.vs['index']=map(str,epa.nodeIds.keys())
@@ -94,9 +95,10 @@ def getGraph(epa):
         g.vs['elev']=[epa.nodeElev[int(n)] for n in g.vs['index']]
         g.vs['head']=[epa.nodeHead[int(n)] for n in g.vs['index']]
         for (eid,(u,v)) in edges.iteritems():
-                g.add_edge(g.vs.find(index=str(u)),g.vs.find(index=str(v)),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid])
+                g.add_edge(g.vs.find(index=str(u)),g.vs.find(index=str(v)),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid],DN=edgeDiameter[eid])
         g.es['type']=[epa.linkTypes[int(n)] for n in g.es['index']]
         g.es['name']=[epa.linkIds[int(n)] for n in g.es['index']]
+        g.es['status']=['closed' if epa.linkInitStatus[int(n)] == 0 else 'open' for n in g.es['index']]
 
         _getCoordinates(g,epa)
         _getVertices(g,epa)
