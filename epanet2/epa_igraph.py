@@ -99,7 +99,7 @@ def expandGraph(g):
                 for i in range(len(edgevertices) - 1):
                     u=g.vs.find(edgevertices[i])
                     v=g.vs.find(edgevertices[i+1])
-                    g.add_edge(u,v,length=_nodedist(u,v),name=str(e['name']+"_"+str(i)),roughness=e['roughness'],type=e['type'],pipe_name=e['name'])
+                    g.add_edge(u,v,length=_nodedist(u,v),DN=e['DN'],DNmm=e['DN'],name=str(e['name']+"_"+str(i)),roughness=e['roughness'],type=e['type'],pipe_name=e['name'])
 
                 edges_to_del.append(e)
 
@@ -138,9 +138,10 @@ def getGraph(epa):
         g.vs['elev']=[epa.nodeElev[int(n)] for n in g.vs['index']]
         g.vs['head']=[epa.nodeHead[int(n)] for n in g.vs['index']]
         for (eid,(u,v)) in edges.iteritems():
-                g.add_edge(g.vs.find(index=str(u)),g.vs.find(index=str(v)),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid],DN=edgeDiameter[eid])
+                g.add_edge(g.vs.find(index=str(u)),g.vs.find(index=str(v)),length=edgeLengths[eid],index=str(eid),roughness=edgeRoughness[eid],DN=edgeDiameter[eid]/1000., DNmm = edgeDiameter[eid])
         g.es['type']=[epa.linkTypes[int(n)] for n in g.es['index']]
         g.es['name']=[epa.linkIds[int(n)] for n in g.es['index']]
+        g.es['pipe_name']=g.es['name']
         g.es['status']=['closed' if epa.linkInitStatus[int(n)] == 0 else 'open' for n in g.es['index']]
 
         _getCoordinates(g,epa)
